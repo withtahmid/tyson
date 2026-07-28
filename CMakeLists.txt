@@ -9,6 +9,10 @@ add_executable(server
     src/main.cpp
 )
 
-target_compile_options(server PRIVATE -Wall -Wextra -g)
-target_compile_options(server PRIVATE -fsanitize=address,undefined)
-target_link_options(server PRIVATE -fsanitize=address,undefined)
+target_compile_options(server PRIVATE 
+    -Wall -Wextra -g
+    -fsanitize=address,undefined
+)
+target_link_options(server PRIVATE 
+    -fsanitize=address,undefined
+)

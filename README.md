@@ -2,7 +2,7 @@
 
 ---
 
-A HTTP server written from scratch with C++ (ik it sucks)
+A HTTP server written from scratch with C++. I know it sucks.
 
 ## build and run
 
