@@ -1,1 +1,15 @@
-build
+# build output
+build/
+cmake-build-*/
+
+# tooling
+compile_commands.json
+.cache/
+.vscode/
+.idea/
+
+# binaries and core dumps
+*.o
+*.a
+core
+core.*
