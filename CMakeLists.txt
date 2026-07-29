@@ -23,6 +23,7 @@ add_executable(server
     src/io.cpp
     src/listener.cpp
     src/connection.cpp
+    src/request_reader.cpp           
 )
 
 target_include_directories(server PRIVATE include)
