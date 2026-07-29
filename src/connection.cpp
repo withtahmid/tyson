@@ -24,36 +24,24 @@ std::string peer_to_string(const sockaddr_in& peer) {
 void handle_connection(int connection_fd) {
     char buf[kBufferSize];
 
-    while(true) {
-        ssize_t n = ::read(connection_fd, buf, sizeof(buf));
-
-        if(n == 0){
-            std::cout << " peer closed (EOF)\n";
-            return;
-        }
-        
-        if(n < 0){
-            if(errno == EINTR) continue;
-            if(is_disconnect(errno)){
-                std::cout << " peer gone: " << std::strerror(errno) << "\n";
-                return;
-            }
-            std::cerr << " read: " << std::strerror(errno) << "\n";
-            return;
-        }
-        std::cout  << " read " << n << " bytes\n";
-        
-        if(!write_all(connection_fd, buf, static_cast<std::size_t>(n))){
-            if(is_disconnect(errno)){
-                std::cout << " peer gone mid write: " << std::strerror(errno) << "\n";
-                return;
-            }
-            std::cerr << " write: " << std::strerror(errno) << "\n"; 
-            return;
-        }
-    
+    const ssize_t n = ::read(connection_fd, buf, sizeof(buf));
+    if(n <= 0){
+        std::cout << " peer left before sending anything useful\n";
+        return;
     }
+    std::cout << " read " << n << " bytes or request (ignored)\n";
 
+    const std::string response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain; charset=utf-8\r\n"
+        "Content-Length: 12\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        "Hello world\n"; 
+
+    if(!write_all(connection_fd, response.data(), response.size())){
+        std::cerr << " write: " << std::strerror(errno) << "\n";
+    }
 }
 
 }
