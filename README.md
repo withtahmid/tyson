@@ -1,5 +1,7 @@
 # tyson
 
+> this README.md file is written by LLM.
+
 An HTTP server implemented from scratch in C++20. Written as an educational
 project to study socket programming and systems-level C++; not intended for
 production use.
