@@ -24,12 +24,11 @@ std::string peer_to_string(const sockaddr_in& peer) {
 }
 
 void handle_connection(int connection_fd) {
-    const HeadResult head = read_head(connection_fd);
+    const ReadResult result = tyson::read_request(connection_fd);
 
-    switch(head.outcome){
+    switch(result.outcome){
         case ReadOutcome::ok: 
-            std::cout << " head complete: " << head.head_end << " bytes before the blank line "
-                      << head.buffer.size() << " bytes buffered total\n";
+            std::cout << " request complete: " << result.request.body.size() << " bytes of body\n";
             break;
         case ReadOutcome::disconnected:
             std::cout << " peer left without a request\n";
@@ -40,17 +39,15 @@ void handle_connection(int connection_fd) {
         case ReadOutcome::head_too_large:
             std::cout << " head too large\n";
             return;
+        case ReadOutcome::body_too_large:
+            std::cout << " body too large\n";
+            return;
         case ReadOutcome::io_error:
             std::cerr << " read: " << std::strerror(errno) << "\n";
             return;
     }
 
-    http::Request request{};
-    if(!http::parse_head(std::string_view{head.buffer.data(), head.head_end}, request)){
-        std::cout << " failed parsing head\n";
-        return; 
-    }
-
+    http::Request request = result.request;
 
   const std::optional<std::string_view> user_agent = find_header(request, "user-agent");
 
@@ -65,8 +62,11 @@ void handle_connection(int connection_fd) {
         for(const http::Header&  header : request.headers){
             std::cout << "    " << header.name << ": " << header.value << "\n";
         }
-        std::cout << 
+
+        std::cout <<
         "  End of headers\n"
+        "  Body length=" << request.body.size() << "\n"
+        "  Body:\n    " << request.body<<  "\n"
         "  User-Agent=" << (user_agent ? *user_agent : std::string_view{"(absent)"}) << "\n"
         "---- END OF REQUEST -----\n";
         // "---- END OF REQUEST -----\n";
