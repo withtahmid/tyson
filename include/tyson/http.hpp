@@ -27,5 +27,11 @@ struct Request {
 
 [[nodiscard]] bool parse_request_line(std::string_view line, Request& out);
 
+[[nodiscard]] bool parse_header_line(std::string_view line, Request& out);
+
+[[nodiscard]] bool parse_head(std::string_view head, Request& out);
+
+[[nodiscard]] std::optional<std::string_view>
+            find_header(const Request& request, std::string_view name) noexcept;
 
 }

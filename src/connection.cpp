@@ -45,20 +45,33 @@ void handle_connection(int connection_fd) {
             return;
     }
 
-    const std::string_view head_view{head.buffer.data(), head.head_end};
-    const std::size_t line_end = head_view.find("\r\n");
-    const std::string_view request_line = line_end == std::string::npos
-                                            ? head_view
-                                            : head_view.substr(0, line_end);
-
-    http::Request request;
-    if(http::parse_request_line(request_line, request)){
-        std::cout << " method=" << request.method_text
-                  << " target=" << request.target
-                  << " version=" << request.version << "\n";
-    }else{
-        std::cout << " malformed request line\n";
+    http::Request request{};
+    if(!http::parse_head(std::string_view{head.buffer.data(), head.head_end}, request)){
+        std::cout << " failed parsing head\n";
+        return; 
     }
+
+
+  const std::optional<std::string_view> user_agent = find_header(request, "user-agent");
+
+    std::cout <<
+        "\n--- REQUEST DETAILS ----\n"
+        "  Method=" << request.method_text << "\n"
+        "  Target=" << request.target << "\n"
+        "  Version=" << request.version << "\n"
+        "  Header Count=" << request.headers.size() << "\n"
+        "  Headers:\n"
+        ;
+        for(const http::Header&  header : request.headers){
+            std::cout << "    " << header.name << ": " << header.value << "\n";
+        }
+        std::cout << 
+        "  End of headers\n"
+        "  User-Agent=" << (user_agent ? *user_agent : std::string_view{"(absent)"}) << "\n"
+        "---- END OF REQUEST -----\n";
+        // "---- END OF REQUEST -----\n";
+
+
 
 
     const std::string response =
