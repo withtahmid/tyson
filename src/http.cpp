@@ -116,5 +116,73 @@ find_header(const Request& request, std::string_view name) noexcept {
     return std::nullopt;
 }
 
+std::string_view reason_phrase(int status) noexcept {
+    switch (status) {
+        case 200: return "OK";
+        case 400: return "Bad Request";
+        case 404: return "Not Found";
+        case 405: return "Method Not Allowed";
+        case 413: return "Content Too Large";
+        case 431: return "Request Header Fields Too Large";
+        case 501: return "Not Implemented";
+        default:  return "Unknown";
+    }
+}
+
+std::string serialize(const Response& response) {
+    std::string out;
+    out += "HTTP/1.1 ";
+    out += std::to_string(response.status);
+    out += ' ';
+    out += reason_phrase(response.status);
+    out += "\r\n";
+
+    for (const Header& header : response.headers) {
+        out += header.name;
+        out += ": ";
+        out += header.value;
+        out += "\r\n";
+    }
+
+    out += "Content-Length: ";
+    out += std::to_string(response.body.size());
+    out += "\r\nConnection: close\r\n\r\n";
+
+    out += response.body;
+
+    return out;
+}
+
+http::Response make_error_response(int status) {
+    http::Response response;
+    response.status = status;
+    response.headers.push_back({"Content-Type", "text/plain; charset=utf-8"});
+    response.body = std::to_string(status);
+    response.body += ' ';
+    response.body += http::reason_phrase(status);
+    response.body += '\n';
+    return response;
+}
+
+http::Response route(const http::Request& request) {
+    if(request.method == http::Method::unknown){
+        return make_error_response(501);
+    }
+    if(request.method != http::Method::get){
+        http::Response response = make_error_response(405);
+        response.headers.push_back({"Allow", "GET"});
+        return response;
+    }
+    if(request.target == "/"){
+        http::Response response;
+        response.headers.push_back({"Content-Type", "text/html; charset=utf-8"});
+        response.body = 
+            "<!doctype html>\n"
+            "<html><head><title>tyson</title></head>\n"
+            "<body><h1>tyson</h1><p>Handwritten HTTP, stage 2 complete.</p></body></html>\n";
+        return response;
+    }
+    return make_error_response(404);
+}
 
 }

@@ -23,6 +23,12 @@ struct Request {
     std::string         body;
 };
 
+struct Response {
+    int status = 200;
+    std::vector<Header> headers;
+    std::string body;
+};
+
 [[nodiscard]] Method method_from_text(std::string_view text) noexcept;
 
 [[nodiscard]] bool parse_request_line(std::string_view line, Request& out);
@@ -33,5 +39,11 @@ struct Request {
 
 [[nodiscard]] std::optional<std::string_view>
             find_header(const Request& request, std::string_view name) noexcept;
+
+[[nodiscard]] std::string_view reason_phrase(int status) noexcept;
+[[nodiscard]] std::string serialize(const Response& response);
+
+Response make_error_response(int status);
+Response route (const Request& Request);
 
 }
