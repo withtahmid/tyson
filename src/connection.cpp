@@ -11,6 +11,7 @@
 #include "tyson/config.hpp"
 #include "tyson/error.hpp"
 #include "tyson/io.hpp"
+#include "tyson/http.hpp"
 
 namespace tyson {
 
@@ -27,7 +28,7 @@ void handle_connection(int connection_fd) {
 
     switch(head.outcome){
         case ReadOutcome::ok: 
-            std::cout << " head complete: " << head.head_end << " bytes before the blank line"
+            std::cout << " head complete: " << head.head_end << " bytes before the blank line "
                       << head.buffer.size() << " bytes buffered total\n";
             break;
         case ReadOutcome::disconnected:
@@ -42,6 +43,21 @@ void handle_connection(int connection_fd) {
         case ReadOutcome::io_error:
             std::cerr << " read: " << std::strerror(errno) << "\n";
             return;
+    }
+
+    const std::string_view head_view{head.buffer.data(), head.head_end};
+    const std::size_t line_end = head_view.find("\r\n");
+    const std::string_view request_line = line_end == std::string::npos
+                                            ? head_view
+                                            : head_view.substr(0, line_end);
+
+    http::Request request;
+    if(http::parse_request_line(request_line, request)){
+        std::cout << " method=" << request.method_text
+                  << " target=" << request.target
+                  << " version=" << request.version << "\n";
+    }else{
+        std::cout << " malformed request line\n";
     }
 
 
