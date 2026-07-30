@@ -2,15 +2,16 @@
 #include "tyson/request_reader.hpp"
 
 #include <arpa/inet.h>
-#include <unistd.h>
+
 
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 
-#include "tyson/config.hpp"
+
 #include "tyson/error.hpp"
 #include "tyson/io.hpp"
+#include "tyson/http.hpp"
 
 namespace tyson {
 
@@ -23,39 +24,44 @@ std::string peer_to_string(const sockaddr_in& peer) {
 }
 
 void handle_connection(int connection_fd) {
-    const HeadResult head = read_head(connection_fd);
+    const ReadResult result = tyson::read_request(connection_fd);
 
-    switch(head.outcome){
-        case ReadOutcome::ok: 
-            std::cout << " head complete: " << head.head_end << " bytes before the blank line"
-                      << head.buffer.size() << " bytes buffered total\n";
+    http::Response response;
+    switch (result.outcome) {
+        case ReadOutcome::ok:
+            std::cout << ' ' << result.request.method_text << ' '
+                      << result.request.target << '\n';
+            response = route(result.request);
+            break;
+        case ReadOutcome::malformed:
+            std::cout << " malformed request -> 400\n";
+            response = http::make_error_response(400);
+            break;
+        case ReadOutcome::head_too_large:
+            std::cout << " oversized head -> 431\n";
+            response = http::make_error_response(431);
+            break;
+        case ReadOutcome::body_too_large:
+            std::cout << " oversized body -> 413\n";
+            response = http::make_error_response(413);
             break;
         case ReadOutcome::disconnected:
-            std::cout << " peer left without a request\n";
-            return;
-        case ReadOutcome::malformed: 
-            std::cout << " connection died mid-request\n";
-            return;
-        case ReadOutcome::head_too_large:
-            std::cout << " head too large\n";
+            std::cout << " peer left without completing a request\n";
             return;
         case ReadOutcome::io_error:
-            std::cerr << " read: " << std::strerror(errno) << "\n";
+            std::cerr << " read: " << std::strerror(errno) << '\n';
             return;
     }
 
-
-    const std::string response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain; charset=utf-8\r\n"
-        "Content-Length: 12\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "Hello World\n"; 
-
-    if(!write_all(connection_fd, response.data(), response.size())){
-        std::cerr << " write: " << std::strerror(errno) << "\n";
+    const std::string wire = http::serialize(response);
+    if(!write_all(connection_fd, wire.data(), wire.size())){
+        if (is_disconnect(errno)) {
+            std::cout << " peer gone mid-response: " << std::strerror(errno) << '\n';
+        } else {
+            std::cerr << " write: " << std::strerror(errno) << '\n';
+        }
     }
+    std::cout << " responded " << response.status << '\n';
 }
 
 }
