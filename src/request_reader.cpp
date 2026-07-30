@@ -39,8 +39,10 @@ FillOutcome fill(int fd, std::string& buffer) {
 
 [[nodiscard]] std::optional<std::size_t> parse_content_length(std::string_view text) {
     std::size_t value = 0;
-    const auto [ptr, ec] = std::from_chars(text.begin(), text.end(), value);
-    if(ec != std::errc{} || ptr != text.end()) {
+    const char* begin = text.data();
+    const char* end   = begin + text.size();
+    const auto [ptr, ec] = std::from_chars(begin, end, value);
+    if(ec != std::errc{} || ptr != end) {
         return std::nullopt;
     }
     return value;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstddef>
 
 #include "tyson/http.hpp"
 namespace tyson {

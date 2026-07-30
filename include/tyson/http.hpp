@@ -43,7 +43,7 @@ struct Response {
 [[nodiscard]] std::string_view reason_phrase(int status) noexcept;
 [[nodiscard]] std::string serialize(const Response& response);
 
-Response make_error_response(int status);
-Response route (const Request& Request);
+tyson::http::Response make_error_response(int status);
+tyson::http::Response route (const Request& request);
 
 }

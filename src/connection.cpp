@@ -2,13 +2,13 @@
 #include "tyson/request_reader.hpp"
 
 #include <arpa/inet.h>
-#include <unistd.h>
+
 
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 
-#include "tyson/config.hpp"
+
 #include "tyson/error.hpp"
 #include "tyson/io.hpp"
 #include "tyson/http.hpp"
